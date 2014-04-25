@@ -10,7 +10,7 @@ import java.util.Random;
 import java.util.Scanner;
 
 /**
- * 
+ *
  * @author neha
  *
  */
@@ -28,7 +28,7 @@ public class SplashTable {
 	// Number of entries in bucket
 	private int numElemBucket;
 
-	// Number of elements per bucket
+	// Number of buckets
 	private int numBuckets;
 
 	// Array for storing hashes for different keys
@@ -57,7 +57,7 @@ public class SplashTable {
 		// this.bucketKey = new KeyValue[numBuckets][numElemBucket];
 		// this.bucketValues = new int[numBuckets][numElemBucket];
 		this.hashFunctions = new HashFunction[numHashFunctions];
-		this.dataArray = new DataArray(this.numElements, this.numElemBucket);
+		this.dataArray = new DataArray(this.numBuckets, this.numElemBucket);
 	}
 
 	/*
@@ -65,7 +65,7 @@ public class SplashTable {
 	 * System.out.println(this.numBuckets + " " + this.numElementsLog + "  " +
 	 * this.numElemBucket); long random = (long) (this.numBuckets * (key *
 	 * r.nextDouble() % 1));
-	 * 
+	 *
 	 * return random; }
 	 */
 
@@ -77,12 +77,12 @@ public class SplashTable {
 		Random r = new Random();
 		for (int i = 0; i < this.numHashFunctions; i++) {
 			hashFunctions[i] = new SplashTable.HashFunction(r.nextDouble(),
-					numElements);
+					numBuckets);
 		}
 	}
 
 	/**
-	 * 
+	 *
 	 * @param data
 	 *            Function to insert given KeyValue pair in the table and
 	 *            reinsert if not inserted in first attempt till number of
@@ -119,7 +119,7 @@ public class SplashTable {
 	}
 
 	/**
-	 * 
+	 *
 	 * @param key
 	 * @return Find the value of a given key
 	 */
@@ -136,32 +136,32 @@ public class SplashTable {
 
 	public static void main(String[] args) throws FileNotFoundException {
 		//HOW TO RUN: splash B R S h inputfile dumpfile < probefile > resultfile
-		
+
 		int numElementsLog =2, numElementsBucket=2,numHashFunctions=1, numReinsertions=1;
 		if(args.length < 5){
 			System.out.println("Not sufficient Command line agruments!\nPlease try again. ");
 			return;
 		} else{
-			
-			String arg1 = args[0]; // Number of elements in a single bucket 
-			String arg2 = args[1]; // Number of re-insertions allowed 	
-			String arg3 = args[2]; // Logarithm of total number of elements 				
+
+			String arg1 = args[0]; // Number of elements in a single bucket
+			String arg2 = args[1]; // Number of re-insertions allowed
+			String arg3 = args[2]; // Logarithm of total number of elements
 			String arg4 = args[3]; // Number of hash functions to be used
 			//String dumpfileName = args[5];
 			//String probefile = args[6];
-			//String resultfile = args[7];		
-			try{		
+			//String resultfile = args[7];
+			try{
 				numElementsLog = Integer.parseInt(arg3);// Logarithm of total number of entries in hashTable i. e. size of the hashTable. S
 				numElementsBucket = Integer.parseInt(arg1);;// Number of elements in a single bucket. B should be power of 2
 				if((numElementsBucket < 0) || ((numElementsBucket & (numElementsBucket - 1)) != 0)){
 					System.out.println("Invalid Input for the Size of the Bucket. Should be power of 2.");
 					return;
 				}
-				numHashFunctions = Integer.parseInt(arg4);// Number of hash functions to be used. h 
+				numHashFunctions = Integer.parseInt(arg4);// Number of hash functions to be used. h
 				numReinsertions = Integer.parseInt(arg2);// Number of re-insertions allowed. R
 			}catch(NumberFormatException | NullPointerException exception ){
 				System.out.println("Unable to process the request :" +exception.getMessage());
-				return;	
+				return;
 			}
 		}
 
@@ -175,7 +175,7 @@ public class SplashTable {
 		// functions
 		splashTable.createHashFunctions();
 
-		Scanner inFile = new Scanner(new FileReader(new File(url+"/src/"+fileName)));
+		Scanner inFile = new Scanner(new FileReader(new File(url+"/"+fileName)));
 		int key;
 		int value;
 
@@ -199,7 +199,7 @@ public class SplashTable {
 	}
 
 	/**
-	 * 
+	 *
 	 * @author neha Class that creates hash function depending upon the given
 	 *         table size and multiplier
 	 */
@@ -219,18 +219,18 @@ public class SplashTable {
 	}
 
 	/**
-	 * 
+	 *
 	 * @author neha Data structure to be used for Hash Table
 	 */
 	private static final class DataArray {
 		private List<Queue<KeyValue>> hashTable;
 		private int numElemBucket;
 
-		// private int numBuckets;
+		 //private int numBuckets;
 
-		public DataArray(int numElements, int numElemBucket) {
-			hashTable = new ArrayList<Queue<KeyValue>>(numElements);
-			for (int i = 0; i < numElements; i++) {
+		public DataArray(int numBuckets, int numElemBucket) {
+			hashTable = new ArrayList<Queue<KeyValue>>(numBuckets);
+			for (int i = 0; i < numBuckets; i++) {
 				hashTable.add(i, new LinkedList<KeyValue>());
 			}
 			this.numElemBucket = numElemBucket;
@@ -238,24 +238,25 @@ public class SplashTable {
 		}
 
 		/**
-		 * 
+		 *
 		 * @param index
 		 * @param data
 		 * @return Method to insert elements into the hash table and return true
 		 *         if inserted and false if the correspinding bucket is full
 		 */
 		public boolean insertElement(int index, KeyValue data) {
-			
+
+
 			boolean inserted = (hashTable.get(index).size() < this.numElemBucket) ? hashTable
 					.get(index).add(data) : false;
 			System.out.println("element inserted : "+inserted);
 					return inserted;
-			
+
 
 		}
 
 		/**
-		 * 
+		 *
 		 * @param index
 		 * @param data
 		 * @return Try to reinsert the element which could be inserted earlier
@@ -272,7 +273,7 @@ public class SplashTable {
 		}
 
 		/**
-		 * 
+		 *
 		 * @param index
 		 * @param key
 		 * @return Find a given key in the HashTable
