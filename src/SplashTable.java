@@ -1,3 +1,4 @@
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.util.ArrayList;
@@ -92,18 +93,31 @@ public class SplashTable {
 	}
 
 	public static void main(String[] args) throws FileNotFoundException {
-		String arg1 = args[0]; // Logarithm of total number of elements
-		String arg2 = args[1]; // Number of elements in a single bucket
-		String fileName = args[2]; // Name of the input file containing key value pairs
-		String arg3 = args[3]; // Number of hash functions to be used
-		String arg4 = args[4]; // Number of re-insertions allowed
+		int numElementsLog =2, numElementsBucket=2,numHashFunctions=1, numReinsertions=1;
+		if(args.length < 5){
+		System.out.println("Not sufficient Command line agruments!\nPlease try again. ");
+		return;
+		} else{
+			
 		
-
-		int numElementsLog = Integer.parseInt(arg1);
-		int numElementsBucket = Integer.parseInt(arg2);
-		int numHashFunctions = Integer.parseInt(arg3);
-		int numReinsertions = Integer.parseInt(arg4);
-		
+		try{		
+		 numElementsLog = Integer.parseInt(args[0]);// Logarithm of total number of entries in hashTable i. e. size of the hashTable. S
+		 numElementsBucket = Integer.parseInt(args[1]);// Number of elements in a single bucket. B should be power of 2
+		 if((numElementsBucket < 0) || ((numElementsBucket & (numElementsBucket - 1)) != 0)){
+			 System.out.println("Invalid Input for the Size of the Bucket. Should be power of 2.");
+			 return;
+		 }
+		 numHashFunctions = Integer.parseInt(args[3]);// Number of hash functions to be used. h 
+		 numReinsertions = Integer.parseInt(args[4]);// Number of re-insertions allowed. R
+		}catch(NumberFormatException | NullPointerException exception ){
+			System.out.println("Unable to process the request :" +exception.getMessage());
+		return;	
+		}
+		}
+		 
+		String fileName = args[2]; // Name of the input file containing key value pairs. filename
+		String url = System.getProperty("user.dir");
+		System.out.println(url);
 		SplashTable splashTable = new SplashTable(numElementsLog,
 				numElementsBucket, numHashFunctions,numReinsertions );
 
@@ -111,7 +125,7 @@ public class SplashTable {
 		// functions
 		splashTable.createHashFunctions();
 
-		Scanner inFile = new Scanner(new FileReader(fileName));
+		Scanner inFile = new Scanner(new FileReader(new File(url+"/src/"+fileName)));
 		int key;
 		int value;
 
@@ -154,10 +168,14 @@ public class SplashTable {
 		}
 
 		public boolean insertElement(int index, KeyValue data) {
+			if(hashTable.size() > index){
 			boolean inserted = (hashTable.get(index).size() > this.numElemBucket) ? hashTable
 					.get(index).add(data) : false;
+					System.out.println("Element inserted : "+inserted);
 			return inserted;
-
+			} else {
+				return false;
+			}
 		}
 		
 		public KeyValue tryReInsert(int index, KeyValue data){
