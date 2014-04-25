@@ -2,6 +2,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
@@ -56,7 +57,7 @@ public class SplashTable {
 		// this.bucketKey = new KeyValue[numBuckets][numElemBucket];
 		// this.bucketValues = new int[numBuckets][numElemBucket];
 		this.hashFunctions = new HashFunction[numHashFunctions];
-		this.dataArray = new DataArray(this.numBuckets, this.numElemBucket);
+		this.dataArray = new DataArray(this.numElements, this.numElemBucket);
 	}
 
 	/*
@@ -76,7 +77,7 @@ public class SplashTable {
 		Random r = new Random();
 		for (int i = 0; i < this.numHashFunctions; i++) {
 			hashFunctions[i] = new SplashTable.HashFunction(r.nextDouble(),
-					numElemBucket);
+					numElements);
 		}
 	}
 
@@ -181,11 +182,20 @@ public class SplashTable {
 		while (inFile.hasNext()) {
 			key = inFile.nextInt();
 			value = inFile.nextInt();
+			System.out.println("key and values are :"+ key +" , "+value);
 			splashTable.build(new KeyValue(key, value));
 		}
 		inFile.close();
 
-
+        List<Queue<KeyValue>> list = splashTable.dataArray.hashTable;
+        for (Iterator iterator = list.iterator(); iterator.hasNext();) {
+			Queue<KeyValue> queue = (Queue<KeyValue>) iterator.next();
+			System.out.println("Queue");
+			for (Iterator iterator2 = queue.iterator(); iterator2.hasNext();) {
+				KeyValue keyValue = (KeyValue) iterator2.next();
+				System.out.println("key values are : "+keyValue.getKey()+ " : "+keyValue.getValue());
+			}
+		}
 	}
 
 	/**
@@ -218,9 +228,9 @@ public class SplashTable {
 
 		// private int numBuckets;
 
-		public DataArray(int numBuckets, int numElemBucket) {
-			hashTable = new ArrayList<Queue<KeyValue>>(numBuckets);
-			for (int i = 0; i < numBuckets; i++) {
+		public DataArray(int numElements, int numElemBucket) {
+			hashTable = new ArrayList<Queue<KeyValue>>(numElements);
+			for (int i = 0; i < numElements; i++) {
 				hashTable.add(i, new LinkedList<KeyValue>());
 			}
 			this.numElemBucket = numElemBucket;
@@ -235,9 +245,12 @@ public class SplashTable {
 		 *         if inserted and false if the correspinding bucket is full
 		 */
 		public boolean insertElement(int index, KeyValue data) {
-			boolean inserted = (hashTable.get(index).size() > this.numElemBucket) ? hashTable
+			
+			boolean inserted = (hashTable.get(index).size() < this.numElemBucket) ? hashTable
 					.get(index).add(data) : false;
-			return inserted;
+			System.out.println("element inserted : "+inserted);
+					return inserted;
+			
 
 		}
 
