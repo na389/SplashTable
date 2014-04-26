@@ -80,79 +80,21 @@ public class SplashTable {
 	 *            Function to insert given KeyValue pair in the table and
 	 *            reinsert if not inserted in first attempt till number of
 	 *            allowed reinsertions have been reached
-	 */
-
-	/*private void build(KeyValue data) {
-		int[] hashFunctionUsed = new int[this.numHashFunctions];
-		int insertTried = 0;
-		
-		boolean opStatus = false;
-		for (int i = 0; i < this.numHashFunctions; i++) {
-			if(data.getKey() <= 0){
-				opStatus = false;
-				System.out.println("Not a valid Key");
-				break;
-			}
-			final long hash = hashFunctions[i].hash(data.getKey());
-			opStatus = this.dataArray.insertElement((int) hash, data);
-			hashFunctionUsed[i] = (int)hash;
-			if (opStatus) {		
-				numInsertions++;				
-				break;
-			} else {
-				if(insertTried == numHashFunctions){					
-					break;
-				}else{
-					insertTried++;
-					continue;
-				}
-			}
-		}
-		
-		if(!opStatus){
-			reInsert(data);
-		}
-	}
-	
-	
-	private void reInsert(KeyValue data){
-		int tries = 0;
-		// If number of tries exceeds number of time re-insertion value
-		// entered by the user don't try anymore		
-		for (int i = 0; i < this.numHashFunctions; i++) {
-			if(data.getKey() <= 0){
-				System.out.println("Not a valid Key");
-				break;
-			}
-			final long hash = hashFunctions[i].hash(data.getKey());			
-			if (tries > numReinsertions) {
-				System.out.println("Re-insertions exceeded");
-				break;
-			} else {
-				tries++;						
-				KeyValue elementToReinsert = this.dataArray.tryReInsert((int) hash, data);
-				data = elementToReinsert;
-				System.out.println("Retried: "+data.getKey());
-				numInsertions++;
-				continue;
-			}
-		}
-	}*/
-	
-	
-    private void build(KeyValue data) {
-        int[] hashFunctionUsed = new int[this.numHashFunctions];
+	 */	
+    private void build(int tries, KeyValue data) {
+        int[] hashFunctionUsed = new int[this.numHashFunctions];        
         int i = 0;
         boolean opStatus = false;
         for (; i < this.numHashFunctions; i++) {
             if(data.getKey() == 0){
+            	System.out.println("Invalid Key");
                 opStatus = false;
                 continue;
             }
             final long hash = hashFunctions[i].hash(data.getKey());
             opStatus = this.dataArray.insertElement((int) hash, data);
             hashFunctionUsed[i] = (int)hash;
-            if (opStatus) {                                   
+            if (opStatus) {                               
                 break;
             } else {                               
                 continue;
@@ -160,34 +102,26 @@ public class SplashTable {
         }
         
         if(!opStatus && i == this.numHashFunctions ){
-           reInsert(data);         
+           reInsert(++tries, data, i);         
         }else{
             numInsertions++; 
         }
     }
     
     
-    private void reInsert(KeyValue data){
-        int tries = 0;
-             
-        for (int i = 0; i < this.numHashFunctions; i++) {
-            if(data.getKey() == 0){
-                continue;
-            }
-            final long hash = hashFunctions[i].hash(data.getKey()); 
-            // If number of tries exceeds number of time re-insertion value
-            // entered by the user don't try anymore           
-            if (tries > numReinsertions) {
-                System.out.println("Re-insertions exceeded");
-                break;
-            } else {
-                tries++;                        
-                KeyValue elementToReinsert = this.dataArray.tryReInsert((int) hash, data);
-                numInsertions++; 
-                build(elementToReinsert);                               
-                return;                
-            }
-        }
+    private void reInsert(int tries, KeyValue data,int i){      
+    	System.out.println("tries :"+tries);
+    	final long hash = hashFunctions[i-1].hash(data.getKey()); 
+    	// If number of tries exceeds number of time re-insertion value entered by the user don't try anymore           
+    	if (tries > numReinsertions) {
+    		System.out.println("Re-insertions exceeded"); 
+    		return;
+    	} else {                   
+    		KeyValue elementToReinsert = this.dataArray.tryReInsert((int) hash, data);
+    		numInsertions++; 
+    		build(tries, elementToReinsert);                               
+    		return;                
+    	}
     }
 	
 	
@@ -198,10 +132,14 @@ public class SplashTable {
 	 */
 	private int probe(int key) {
 		int resultValue = -1;
-		for (int i = 0; this.dataArray.findKey(
-				(int) hashFunctions[i].hash(key), key) != -1
-				&& i < this.numHashFunctions;i++) {			
-			resultValue = this.dataArray.findKey((int) hashFunctions[i].hash(key), key);			
+		for (int i = 0; i < this.numHashFunctions;i++) {
+			int index = (int) hashFunctions[i].hash(key);
+			System.out.println("Probe: i= "+i+ " index:"+index);
+			resultValue = this.dataArray.findKey(index, key);	
+			if(resultValue != -1){
+				System.out.println("Result:"+resultValue);
+				break;
+			}
 		}
 		return resultValue;
 	}
@@ -257,7 +195,7 @@ public class SplashTable {
 		while (inFile.hasNext()) {
 			key = inFile.nextInt();
 			value = inFile.nextInt();
-			splashTable.build(new KeyValue(key, value));
+			splashTable.build(0, new KeyValue(key, value));
 		}
 		inFile.close();
 
@@ -419,10 +357,14 @@ public class SplashTable {
 		public int findKey(int index, int key) {
 			// Assuming there are only positive keys
 			int value = -1;
-			for (KeyValue keyValue : hashTable.get(index)) {
-				value = keyValue.getKey() == key ? keyValue.getValue() : -1;
-				return value;
+			
+			Iterator<KeyValue> iterator2 = hashTable.get(index).iterator();
+			KeyValue keyValue = iterator2.next();
+			for (; iterator2.hasNext() && keyValue.getKey()!=key;) {
+				 keyValue = iterator2.next();
+				System.out.println("Findkey:"+keyValue);								
 			}
+			value = keyValue.getKey() == key ? keyValue.getValue() : -1;
 			return value;
 		}
 	}
