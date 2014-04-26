@@ -1,6 +1,12 @@
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -46,6 +52,8 @@ public class SplashTable {
 
 	private int numInsertions;
 
+	final static Charset ENCODING = StandardCharsets.UTF_8;
+	
 	public SplashTable(int numElementsLog, int numElemBucket,
 			int numHashFunctions, int numReinsertions) {
 		this.numElementsLog = numElementsLog;
@@ -59,15 +67,6 @@ public class SplashTable {
 		this.hashFunctions = new HashFunction[numHashFunctions];
 		this.dataArray = new DataArray(this.numBuckets, this.numElemBucket);
 	}
-
-	/*
-	 * private long hash(Integer key) { Random r = new Random();
-	 * System.out.println(this.numBuckets + " " + this.numElementsLog + "  " +
-	 * this.numElemBucket); long random = (long) (this.numBuckets * (key *
-	 * r.nextDouble() % 1));
-	 *
-	 * return random; }
-	 */
 
 	/**
 	 * Function to calculate and store the hash functions depending upon number
@@ -90,27 +89,29 @@ public class SplashTable {
 	 */
 
 	private void build(KeyValue data) {
-		// TODO: Find solution for if else using ternary or something to use
-		// break and continue conditionally
 		int tries = 0;
 		boolean opStatus = false;
 		for (int i = 0; i < this.numHashFunctions; i++) {
+			if(data.getKey() == 0){
+				opStatus = false;
+				continue;
+			}
 			final long hash = hashFunctions[i].hash(data.getKey());
-			opStatus = this.dataArray.insertElement((int) hash, data);
+			opStatus = this.dataArray.insertElement((int) hash, data);			
 			if (opStatus) {
 				numInsertions++;
-				break; // Need to find a solution of this using ternary operator
+				//break; // Need to find a solution of this using ternary operator
 			} else {
-				tries++;
 				// If number of tries exceeds number of time re-insertion value
-				// entered by the user don't try anymore
-				KeyValue elementToReinsert = this.dataArray.tryReInsert(
-						(int) hash, data);
-				data = elementToReinsert;
-				// assert(tries > numReinsertions)? break: continue;
+				// entered by the user don't try anymore									
 				if (tries > numReinsertions) {
+					System.out.println("Re-insertions exceeded");
 					break;
 				} else {
+					tries++;
+					KeyValue elementToReinsert = this.dataArray.tryReInsert((int) hash, data);
+					data = elementToReinsert;
+					System.out.println("Retried: "+data.getKey());
 					numInsertions++;
 					continue;
 				}
@@ -121,22 +122,21 @@ public class SplashTable {
 	/**
 	 *
 	 * @param key
-	 * @return Find the value of a given key
+	 * @return Value of a given key
 	 */
 	private int probe(int key) {
+		int resultValue = -1;
 		for (int i = 0; this.dataArray.findKey(
 				(int) hashFunctions[i].hash(key), key) != -1
-				&& i < this.numHashFunctions; i++) {
-			// this.dataArray.findKey((int)hashFunctions[i].hash(key), key);
-			return this.dataArray
-					.findKey((int) hashFunctions[i].hash(key), key);
+				&& i < this.numHashFunctions;i++) {			
+			resultValue = this.dataArray.findKey((int) hashFunctions[i].hash(key), key);			
 		}
-		return -1;
+		return resultValue;
 	}
 
-	public static void main(String[] args) throws FileNotFoundException {
+	public static void main(String[] args){
 		//HOW TO RUN: splash B R S h inputfile dumpfile < probefile > resultfile
-
+		// S = 2 B = 2 h = 1 R = 1 inputfile dumpfile probefile resultfile
 		int numElementsLog =2, numElementsBucket=2,numHashFunctions=1, numReinsertions=1;
 		if(args.length < 5){
 			System.out.println("Not sufficient Command line agruments!\nPlease try again. ");
@@ -146,10 +146,8 @@ public class SplashTable {
 			String arg1 = args[0]; // Number of elements in a single bucket
 			String arg2 = args[1]; // Number of re-insertions allowed
 			String arg3 = args[2]; // Logarithm of total number of elements
-			String arg4 = args[3]; // Number of hash functions to be used
-			//String dumpfileName = args[5];
-			//String probefile = args[6];
-			//String resultfile = args[7];
+			String arg4 = args[3]; // Number of hash functions to be used			
+
 			try{
 				numElementsLog = Integer.parseInt(arg3);// Logarithm of total number of entries in hashTable i. e. size of the hashTable. S
 				numElementsBucket = Integer.parseInt(arg1);;// Number of elements in a single bucket. B should be power of 2
@@ -165,9 +163,10 @@ public class SplashTable {
 			}
 		}
 
-		String fileName = args[4]; // Name of the input file containing key value pairs. filename
-		String url = System.getProperty("user.dir");
-		System.out.println(url);
+		String inputFileName = args[4]; // Name of the input file containing key value pairs. filename
+		String dumpFileName = args[5]; //Name of the dumpfile
+		String probefile = args[6]; //Name of probefile
+		String resultfile = args[7]; // Name for resultfile
 		SplashTable splashTable = new SplashTable(numElementsLog,
 				numElementsBucket, numHashFunctions,numReinsertions );
 
@@ -175,29 +174,99 @@ public class SplashTable {
 		// functions
 		splashTable.createHashFunctions();
 
-		Scanner inFile = new Scanner(new FileReader(new File(url+"/"+fileName)));
+		Scanner inFile = null;
+		try {
+			inFile = new Scanner(new FileReader(new File(inputFileName)));
+		} catch (FileNotFoundException e) {
+			System.out.println("Input file not found");
+			e.printStackTrace();
+		}
 		int key;
 		int value;
 
 		while (inFile.hasNext()) {
 			key = inFile.nextInt();
 			value = inFile.nextInt();
-			System.out.println("key and values are :"+ key +" , "+value);
 			splashTable.build(new KeyValue(key, value));
 		}
 		inFile.close();
 
-        List<Queue<KeyValue>> list = splashTable.dataArray.hashTable;
-        for (Iterator iterator = list.iterator(); iterator.hasNext();) {
+		
+		List<String> probeKeys = new ArrayList<>();
+		 try {
+				probeKeys = splashTable.readTextFile(probefile);
+			} catch (IOException e) {
+				System.out.println("Error Reading Probe File");
+				e.printStackTrace();
+			}
+		List<String> resultFileData = new ArrayList<>();
+		int valueOutput = -1;
+		for(String keyInput: probeKeys){
+			valueOutput = splashTable.probe(Integer.parseInt(keyInput));
+			if(valueOutput !=-1){
+				resultFileData.add(""+valueOutput);
+			}
+			else{
+				System.out.println("Result not found for:"+keyInput);
+			}
+		}
+		try {
+			splashTable.writeTextFile(resultFileData, resultfile);
+		} catch (IOException e) {
+			System.out.println("Error Writing Result File");
+			e.printStackTrace();
+		}
+		splashTable.dump(dumpFileName);
+	}
+	
+	/*
+	 * Creating Dump File
+	 * B S h N
+	   H[0] H[1] ... H[h-1]
+       K[0] P[0]
+       K[1] P[1]
+        ...
+       K[2^S-1] P[2^S-1]
+	 */
+	private void dump(String dumpFileName){
+		ArrayList<String> outputDump = new ArrayList<>();
+		outputDump.add(""+numElemBucket+  " "+numElementsLog+ " "+numHashFunctions+ " "+numInsertions );
+		StringBuilder str = new StringBuilder();
+		for(HashFunction function : hashFunctions){
+			str.append(function.toString());
+		}
+		outputDump.add(str.toString());
+        List<Queue<KeyValue>> list = dataArray.hashTable;
+        for (Iterator<Queue<KeyValue>> iterator = list.iterator(); iterator.hasNext();) {
 			Queue<KeyValue> queue = (Queue<KeyValue>) iterator.next();
 			System.out.println("Queue");
-			for (Iterator iterator2 = queue.iterator(); iterator2.hasNext();) {
+			for (Iterator<KeyValue> iterator2 = queue.iterator(); iterator2.hasNext();) {
 				KeyValue keyValue = (KeyValue) iterator2.next();
+				outputDump.add(keyValue.getKey()+" "+keyValue.getValue());
 				System.out.println("key values are : "+keyValue.getKey()+ " : "+keyValue.getValue());
 			}
 		}
+        
+        
+        try {
+			writeTextFile(outputDump, dumpFileName);
+		} catch (IOException e) {
+			System.out.println("Error Writing Dump File");
+			e.printStackTrace();
+		}
 	}
 
+	private void writeTextFile(List<String> outputDump, String aFileName) throws IOException {
+	    Path path = Paths.get(aFileName);
+	    Files.write(path, outputDump, ENCODING);
+	  }
+	
+	 private List<String> readTextFile(String aFileName) throws IOException {
+		    Path path = Paths.get(aFileName);
+		    return Files.readAllLines(path, ENCODING);
+		  }
+	
+	
 	/**
 	 *
 	 * @author neha Class that creates hash function depending upon the given
@@ -216,6 +285,13 @@ public class SplashTable {
 		public long hash(int key) {
 			return (long) (sizeTable * (key * multiplier % 1));
 		}
+
+		@Override
+		public String toString() {
+			return multiplier+" ";
+		}
+		
+		
 	}
 
 	/**
@@ -236,7 +312,7 @@ public class SplashTable {
 			this.numElemBucket = numElemBucket;
 			// this.numBuckets = numBuckets;
 		}
-
+		
 		/**
 		 *
 		 * @param index
@@ -245,14 +321,10 @@ public class SplashTable {
 		 *         if inserted and false if the correspinding bucket is full
 		 */
 		public boolean insertElement(int index, KeyValue data) {
-
-
 			boolean inserted = (hashTable.get(index).size() < this.numElemBucket) ? hashTable
 					.get(index).add(data) : false;
-			System.out.println("element inserted : "+inserted);
-					return inserted;
-
-
+			System.out.println("element:" + data.getKey() + " hash index:" + index+ "inserted : "+inserted);
+			return inserted;
 		}
 
 		/**
