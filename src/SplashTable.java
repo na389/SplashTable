@@ -145,7 +145,7 @@ public class SplashTable {
 	 */
 	private int probe(int key) {
 		int result = -1;
-		for (int i = 0; i < this.numHashFunctions; i++) {
+		for (int i = 0; i < this.numHashFunctions && (result == -1); i++) {
 			int index = hashFunctions[i].hash(key);
 			System.out.println("Probe: i= "+i+ " index:"+index);
 			result = this.dataArray.findKey(index, key);			
@@ -219,13 +219,17 @@ public class SplashTable {
 		int valueOutput = -1;
 		for(String keyInput: probeKeys){
 			valueOutput = splashTable.probe(Integer.parseInt(keyInput));
-			if(valueOutput !=-1){
+			switch (valueOutput){
+			case -1:{
+				System.out.println("Result not found for:"+keyInput);
+				break;
+			}
+			default: {
 				System.out.println("Result:"+valueOutput);
 				resultFileData.add(keyInput+ " "+valueOutput);
+				break;
 			}
-			else{
-				System.out.println("Result not found for:"+keyInput);
-			}
+		}
 		}
 		try {
 			splashTable.writeTextFile(resultFileData, resultfile);
