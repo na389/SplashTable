@@ -97,7 +97,7 @@ public class SplashTable {
                 opStatus = false;
                 continue;
             }
-            final int hash = hashFunctions[i].hash(data.getKey());
+            final int hash = (int)hashFunctions[i].hash(data.getKey());
             opStatus = this.dataArray.insertElement(hash, data);
             hashFunctionUsed[i] = (int)hash;
             if (opStatus) {                               
@@ -122,7 +122,7 @@ public class SplashTable {
      */
     private void reInsert(int tries, KeyValue data,int i){      
     	System.out.println("tries :"+tries);
-    	final int hash = hashFunctions[i-1].hash(data.getKey()); 
+    	final int hash = (int)hashFunctions[i-1].hash(data.getKey()); 
     	// If number of tries exceeds number of time re-insertion value entered by the user don't try anymore           
     	if (tries > numReinsertions) {
     		System.out.println("Re-insertions exceeded");
@@ -130,8 +130,7 @@ public class SplashTable {
     		System.exit(0);    		
     		return;
     	} else {                
-    		KeyValue elementToReinsert = this.dataArray.tryReInsert( hash, data);
-    		numInsertions++; 
+    		KeyValue elementToReinsert = this.dataArray.tryReInsert( hash, data);    		
     		build(tries, elementToReinsert);                               
     		return;                
     	}
@@ -145,8 +144,8 @@ public class SplashTable {
 	 */
 	private int probe(int key) {
 		int result = -1;
-		for (int i = 0; i < this.numHashFunctions && (result == -1); i++) {
-			int index = hashFunctions[i].hash(key);
+		for (int i = 0; i < this.numHashFunctions && result == -1; i++) {
+			int index = (int)hashFunctions[i].hash(key);
 			System.out.println("Probe: i= "+i+ " index:"+index);
 			result = this.dataArray.findKey(index, key);			
 		}
@@ -211,25 +210,25 @@ public class SplashTable {
 		List<String> probeKeys = new ArrayList<>();
 		 try {
 				probeKeys = splashTable.readTextFile(probefile);
-			} catch (IOException e) {
+			} catch (NumberFormatException | NullPointerException| IOException e) {
 				System.out.println("Error Reading Probe File");
 				e.printStackTrace();
 			}
 		List<String> resultFileData = new ArrayList<>();
 		int valueOutput = -1;
 		for(String keyInput: probeKeys){
-			valueOutput = splashTable.probe(Integer.parseInt(keyInput));
+			valueOutput = splashTable.probe(Integer.parseInt(keyInput.trim()));			
 			switch (valueOutput){
-			case -1:{
-				System.out.println("Result not found for:"+keyInput);
-				break;
+				case -1:{
+					System.out.println("Result not found for:"+keyInput);
+					break;
+				}
+				default: {
+					System.out.println("Result:"+valueOutput);
+					resultFileData.add(keyInput+ " "+valueOutput);
+					break;
+				}
 			}
-			default: {
-				System.out.println("Result:"+valueOutput);
-				resultFileData.add(keyInput+ " "+valueOutput);
-				break;
-			}
-		}
 		}
 		try {
 			splashTable.writeTextFile(resultFileData, resultfile);
@@ -314,7 +313,10 @@ public class SplashTable {
 		}
 
 		public int hash(int key) {
-			return (int) (sizeTable * (key * multiplier % 1));
+			int s = (int) (multiplier * Math.pow(2, 32));						
+			int n = s << -32 >>> -32;	 // Extract the Least Significant Bits of the closest integer	
+			int w_r = 32 - (int)(Math.log10(sizeTable)/Math.log10(2));			
+			return (n >> w_r) ; //Return the required MSBs of the number depending upon the number of slots
 		}
 
 		@Override
