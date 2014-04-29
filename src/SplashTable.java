@@ -72,14 +72,25 @@ public class SplashTable {
 	 * Function to calculate and store the hash functions depending upon number
 	 * of hash functions to be used
 	 */
-	private void createHashFunctions() {
-		Random r = new Random();
+	private void createHashFunctions() {		
 		for (int i = 0; i < this.numHashFunctions; i++) {
-			hashFunctions[i] = new SplashTable.HashFunction(r.nextDouble(),
+			hashFunctions[i] = new SplashTable.HashFunction(getRandom(),
 					numBuckets);
 		}
 	}
-
+	
+	public int getRandom(){
+		Random rn = new Random();
+	    int randomNum = 0;	
+	    while(true){
+	    	randomNum = rn.nextInt(Integer.MAX_VALUE);
+	    	if((randomNum & 1) == 1 ){
+	    		break;
+	    	}
+	    }
+	    return randomNum;
+	}
+	
 	/**
 	 *
 	 * @param data
@@ -130,8 +141,9 @@ public class SplashTable {
     		System.exit(0);    		
     		return;
     	} else {                
-    		KeyValue elementToReinsert = this.dataArray.tryReInsert( hash, data);    		
-    		build(tries, elementToReinsert);                               
+    		KeyValue elementToReinsert = this.dataArray.tryReInsert( hash, data);  
+    		if(elementToReinsert != null)
+    			build(tries, elementToReinsert);                               
     		return;                
     	}
     }
@@ -304,21 +316,23 @@ public class SplashTable {
 	 */
 	private static final class HashFunction {
 		// Multiplier to calculate hash
-		private final double multiplier;
+		private final int multiplier;
 		private final long sizeTable;
 
-		public HashFunction(double multiplier, long sizeTable) {
+		public HashFunction(int multiplier, long sizeTable) {
 			this.multiplier = multiplier;
 			this.sizeTable = sizeTable;
 		}
 
 		public int hash(int key) {
-			int s = (int) (multiplier * Math.pow(2, 32));						
-			int n = s << -32 >>> -32;	 // Extract the Least Significant Bits of the closest integer	
-			int w_r = 32 - (int)(Math.log10(sizeTable)/Math.log10(2));			
-			return (n >> w_r) ; //Return the required MSBs of the number depending upon the number of slots
+			long s = (long) ((multiplier * key) % (Math.pow(2, 32)));		
+			System.out.println("S>>"+s);
+			s =  (s & (long)(Math.pow(2, 32)-1));
+			System.out.println("S:"+s);
+			int w_r = 32 - (int)(Math.log10(sizeTable)/Math.log10(2));				
+			return (int) (s >>> w_r) ;
 		}
-
+		
 		@Override
 		public String toString() {
 			return multiplier+" ";
@@ -368,6 +382,7 @@ public class SplashTable {
 		public KeyValue tryReInsert(int index, KeyValue data) {
 			// Its known that the corresponding bucket is full so move the data
 			// around
+			
 			KeyValue elementInsertedFirst = hashTable.get(index).poll();
 			hashTable.get(index).add(data);
 			return elementInsertedFirst;
