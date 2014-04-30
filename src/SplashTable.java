@@ -8,6 +8,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.InputMismatchException;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -17,7 +18,24 @@ import java.util.Scanner;
 
 /**
  *
- * @author neha
+ * Splash Table is bucketized version of d-ary cuckoo hashing.
+ * This hash table mainly improves the probing over cuckoo hashing
+ * by removing control dependency from the probing routing and relying 
+ * on data dependency thus reducing the number of cycles required to 
+ * perform the probing of the hash-table. A splash table inserts an 
+ * item using multiple hash functions. A key can be inserted into a 
+ * bucket corresponding to any one of the functions. Probes need to 
+ * consult all hash buckets for the key. The cool thing about splash 
+ * tables is that if there is no room in any bucket for a new key, one 
+ * can evict some other key to make room. This other key can be re-inserted 
+ * elsewhere, depending on the values of its other hash functions.
+ * Main functions:
+ * {@link build(int, KeyValue)},
+ * {@link dump()},
+ * {@link probe(int)}
+ * @class HashFunction: Used to represent hash functions to be used depending
+ * upon the number of hash functions specified by the user
+ * @class DataArray: Data structure for the splash table and its corresponding operations 
  *
  */
 public class SplashTable {
@@ -221,12 +239,20 @@ public class SplashTable {
 		}
 		int key;
 		int value;
-
-		while (inFile.hasNext()) {
-			key = inFile.nextInt();
-			value = inFile.nextInt();
-			splashTable.build(0, new KeyValue(key, value));
-		}		
+		
+		try{
+			while (inFile.hasNext()) {
+				key = inFile.nextInt();
+				value = inFile.nextInt();
+				splashTable.build(0, new KeyValue(key, value));
+			}	
+		}catch(NumberFormatException | NullPointerException | InputMismatchException exception ){
+			if(exception instanceof InputMismatchException){
+				System.out.println("Number entered is out of range");
+				splashTable.dump(dumpFileName);
+				System.exit(0);
+			}
+		}
 		splashTable.dump(dumpFileName);
 		inFile.close();
 
@@ -330,6 +356,8 @@ public class SplashTable {
 	private static final class HashFunction {
 		// Multiplier to calculate hash
 		private final int multiplier;
+		
+		//Number of buckets in the table
 		private final long sizeTable;
 
 		public HashFunction(int multiplier, long sizeTable) {
@@ -337,12 +365,41 @@ public class SplashTable {
 			this.sizeTable = sizeTable;
 		}
 
+		//Method to calculate hash depending upon different multipliers 
 		public int hash(int key) {
 			long s = (long) ((multiplier * key) % (Math.pow(2, 32)));		
 			s =  (s & (long)(Math.pow(2, 32)-1));//Taking LSBs of the 64 bit number
-			int w_r = 32 - (int)(Math.log10(sizeTable)/Math.log10(2));				
+			int log = 0;
+			if(sizeTable > Integer.MAX_VALUE){
+				System.out.println("Size of the table too big");
+			}else{
+				log = log2((int)sizeTable);
+			}
+			//Number of bits required in the result
+			//32 is chosen because word size for integer is maximum 32
+			int w_r = 32 - log;			
 			return (int) (s >>> w_r) ;//Getting required bits of the integer to hash into the buckets
 		}
+		
+		//Method to find log of the size to determine number of bits to be used in the result
+		public static int log2(int v){		
+			if(v <= 0 || v == 1 ){
+				return 0;
+			}
+			final int b[] = {0x2, 0xC, 0xF0, 0xFF00, 0xFFFF0000};
+			final int S[] = {1, 2, 4, 8, 16};
+			int i;
+
+			int r = 0; // result
+			for (i = 4; i >= 0; i--){
+				if ((v & b[i]) != 0){
+					v >>= S[i];
+					r |= S[i];
+				} 
+			}
+			return r;
+		}
+		
 		
 		@Override
 		public String toString() {
