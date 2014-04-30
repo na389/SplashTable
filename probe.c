@@ -26,8 +26,8 @@ int main(int argc, char *argv[])
     int b,s,n,h;
     int rows;
     int pay_load;
-    int probing[100];
-    int key_pay[80][8];
+    int probing[1000];
+    int key_pay[800][8];
     int key, value,probes;
     int i =0, j=0,k=0,count=0;
     int hash[4];
