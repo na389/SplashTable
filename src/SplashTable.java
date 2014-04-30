@@ -1,12 +1,8 @@
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.InputMismatchException;
 import java.util.Iterator;
@@ -64,10 +60,7 @@ public class SplashTable {
 	private final int numReinsertions;
 
 	//Total number of successful insertions done
-	private int numInsertions;
-
-	//Character Encoding to be used while writing to a file
-	final static Charset ENCODING = StandardCharsets.UTF_8;
+	private int numInsertions;	
 	
 	//Dump file name
 	private String dumpFileName; 
@@ -212,8 +205,11 @@ public class SplashTable {
 				}
 				numHashFunctions = Integer.parseInt(arg4);// Number of hash functions to be used. h
 				numReinsertions = Integer.parseInt(arg2);// Number of re-insertions allowed. R
-			}catch(NumberFormatException | NullPointerException exception ){
-				System.out.println("Unable to process the request :" +exception.getMessage());
+			}catch(NumberFormatException e1){
+				System.out.println("Unable to process the request :" +e1.getMessage());
+				return;
+			}catch (NullPointerException e2 ) {
+				System.out.println("Unable to process the request :" +e2.getMessage());
 				return;
 			}
 		}
@@ -241,8 +237,12 @@ public class SplashTable {
 				value = inFile.nextInt();
 				splashTable.build(0, new KeyValue(key, value));
 			}	
-		}catch(NumberFormatException | NullPointerException | InputMismatchException exception ){
-			if(exception instanceof InputMismatchException){
+		}catch(NumberFormatException e1){
+			
+		}catch (NullPointerException e2 ) {
+			
+		}catch (InputMismatchException e3 ) {
+			if(e3 instanceof InputMismatchException){
 				System.out.println("Number entered is out of range");
 				splashTable.dump(dumpFileName);
 				System.exit(0);
@@ -252,14 +252,20 @@ public class SplashTable {
 		inFile.close();
 
 		
-		List<String> probeKeys = new ArrayList<>();
+		List<String> probeKeys = new ArrayList<String>();
 		 try {
 				probeKeys = splashTable.readTextFile(probefile);
-			} catch (NumberFormatException | NullPointerException| IOException e) {
+			}catch(NumberFormatException e1){
+				System.out.println("Error Reading Probe File");
+				e1.printStackTrace();
+			}catch (NullPointerException e2 ) {
+				System.out.println("Error Reading Probe File");
+				e2.printStackTrace();
+			} catch (IOException e) {
 				System.out.println("Error Reading Probe File");
 				e.printStackTrace();
 			}
-		List<String> resultFileData = new ArrayList<>();
+		List<String> resultFileData = new ArrayList<String>();
 		int valueOutput = 0;
 		for(String keyInput: probeKeys){
 			valueOutput = splashTable.probe(Integer.parseInt(keyInput.trim()));			
@@ -297,7 +303,7 @@ public class SplashTable {
 	 */
 	
 	private void dump(String dumpFileName){
-		ArrayList<String> outputDump = new ArrayList<>();
+		ArrayList<String> outputDump = new ArrayList<String>();
 		outputDump.add(""+numElemBucket+  " "+numElementsLog+ " "+numHashFunctions+ " "+numInsertions );
 		StringBuilder str = new StringBuilder();
 		for(HashFunction function : hashFunctions){
@@ -333,13 +339,26 @@ public class SplashTable {
 	}
 
 	private void writeTextFile(List<String> outputDump, String aFileName) throws IOException {
-	    Path path = Paths.get(aFileName);
-	    Files.write(path, outputDump, ENCODING);
+	   // Path path = Paths.get(aFileName);
+	    //Files.write(path, outputDump, ENCODING);
+	    
+	    FileWriter writer = new FileWriter(aFileName); 
+	    for(String str: outputDump) {	    	
+	      writer.write(str+"\n");
+	    }
+	    writer.close();
 	  }
 	
 	private List<String> readTextFile(String aFileName) throws IOException {
-		Path path = Paths.get(aFileName);
-		return Files.readAllLines(path, ENCODING);
+		//Path path = Paths.get(aFileName);
+		///return Files.readAllLines(path, ENCODING);		
+		Scanner s = new Scanner(new File(aFileName));
+		ArrayList<String> list = new ArrayList<String>();
+		while (s.hasNext()){
+		    list.add(s.next());		    
+		}
+		s.close();
+		return list;
 	}
 	
 	
