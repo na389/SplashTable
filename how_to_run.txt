@@ -1,0 +1,7 @@
+1. To create executable run:
+			make
+all the jva files should be in the same directory
+2. To create jar file:
+make jarfile
+3. To run:
+make splash B=<> R=<> S=<> h=<> inputfile=<> dumpfile=<> probefile=<> resultfile=<>
