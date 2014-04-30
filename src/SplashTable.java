@@ -170,6 +170,12 @@ public class SplashTable {
 		return result;
 	}
 
+	/**
+	 * @param args
+	 */
+	/**
+	 * @param args
+	 */
 	public static void main(String[] args){
 		//HOW TO RUN: splash B R S h inputfile dumpfile < probefile > resultfile
 		// S = 2 B = 2 h = 1 R = 1 inputfile dumpfile probefile resultfile
