@@ -142,7 +142,10 @@ public class SplashTable {
         }
         
         if(!opStatus && i == this.numHashFunctions ){
-           reInsert(++tries, data, i);         
+        	if(this.numHashFunctions == 2)
+        		reInsert(++tries, data, 0);
+        	else
+        		reInsert(++tries, data, i-1);
         }else{
             numInsertions++; 
         }
@@ -156,7 +159,7 @@ public class SplashTable {
      */
     private void reInsert(int tries, KeyValue data,int i){      
     	System.out.println("tries :"+tries);
-    	final int hash = (int)hashFunctions[i-1].hash(data.getKey()); 
+    	final int hash = (int)hashFunctions[i].hash(data.getKey()); 
     	// If number of tries exceeds number of time re-insertion value entered by the user don't try anymore           
     	if (tries > numReinsertions) {
     		System.out.println("Re-insertions exceeded");
@@ -177,23 +180,15 @@ public class SplashTable {
 	 * @param key
 	 * @return Value of a given key
 	 */
-	private int probe(int key) {
-		System.out.println("Probe: key->"+key);
+	private int probe(int key) {		
 		int result = 0;
 		for (int i = 0; i < this.numHashFunctions && result == 0; i++) {
-			int index = (int)hashFunctions[i].hash(key);
-			System.out.println("Probe: i= "+i+ " index:"+index);
+			int index = (int)hashFunctions[i].hash(key);			
 			result = this.dataArray.findKey(index, key);			
 		}
 		return result;
 	}
 
-	/**
-	 * @param args
-	 */
-	/**
-	 * @param args
-	 */
 	public static void main(String[] args){
 		//HOW TO RUN: splash B R S h inputfile dumpfile < probefile > resultfile
 		// S = 2 B = 2 h = 1 R = 1 inputfile dumpfile probefile resultfile
@@ -350,8 +345,9 @@ public class SplashTable {
 	
 	/**
 	 *
-	 * @author neha Class that creates hash function depending upon the given
-	 *         table size and multiplier
+	 * @author neha 
+	 * Class that creates hash function depending upon the given
+	 * table size and multiplier
 	 */
 	private static final class HashFunction {
 		// Multiplier to calculate hash
@@ -382,7 +378,7 @@ public class SplashTable {
 		}
 		
 		//Method to find log of the size to determine number of bits to be used in the result
-		public static int log2(int v){		
+		public static int log2(int v){
 			if(v <= 0 || v == 1 ){
 				return 0;
 			}
@@ -409,7 +405,8 @@ public class SplashTable {
 
 	/**
 	 *
-	 * @author neha Data structure to be used for Hash Table
+	 * @author neha 
+	 * Data structure to be used for Hash Table
 	 */
 	private static final class DataArray {
 		private List<Queue<KeyValue>> hashTable;
@@ -431,8 +428,7 @@ public class SplashTable {
 		 */
 		public boolean insertElement(int index, KeyValue data) {
 			boolean inserted = (hashTable.get(index).size() < this.numElemBucket) ? hashTable
-					.get(index).add(data) : false;
-			System.out.println("element:" + data.getKey() + " hash index:" + index+ "inserted : "+inserted);
+					.get(index).add(data) : false;			
 			return inserted;
 		}
 
