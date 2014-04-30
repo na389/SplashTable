@@ -9,22 +9,15 @@
 #include <nmmintrin.h>
 
 
-int probe(float probing, float splash_table[][8], float hash[],int rows);
+int probe(int probing, int splash_table[][8], int hash[],int rows);
 
 
-float vectorGetByIndex(__m128 V, unsigned int i)
-{
-    // Function to get the particular index value from a _m128 variable
-    union {
-        __m128 v;
-        float a[4];
-    } U;
-    
-    U.v = V;
-    return U.a[i];
-}
 
-
+// Reads the dumpfile to get the values of B,S,N,h to probe the probe file and find the corresponding payloads.
+// B - Bucket Size
+// S - Size
+// N - no. of successful insertions
+// h - No. of hash functions
 
 int main(int argc, char *argv[])
 {
@@ -33,16 +26,20 @@ int main(int argc, char *argv[])
     int b,s,n,h;
     int rows;
     int pay_load;
-    float probing[50];
-    float key_pay[40][8];
-    float key, value,probes;
+    int probing[100];
+    int key_pay[80][8];
+    int key, value,probes;
     int i =0, j=0,k=0,count=0;
-    float hash[4];
-    char *t;
-    char f;
+    int hash[4];
     
     // Reading the dump file
+    
     fp = fopen(argv[1], "r");
+    if(!fp)
+    {
+        printf("\nFile not found\n\n");
+        exit(0);
+    }
     
     // getting the Input file
     fp1=stdin;
@@ -50,7 +47,7 @@ int main(int argc, char *argv[])
     {
     // Reading each line of input file to get the value of probe keys and store them in an array
         
-        while(fscanf(fp1,"%f",&probes)!=EOF)
+        while(fscanf(fp1,"%d",&probes)!=EOF)
         {
             probing[count]=probes;
             count++;
@@ -64,8 +61,8 @@ int main(int argc, char *argv[])
         // Getting the no. of buckets
         rows = (pow(2,s))/b;
         // Reading the hash functions
-        fscanf(fp, "%f%f", &hash[0], &hash[2]);
-        while(fscanf(fp,"%f%f", &key, &value)!=EOF)
+        fscanf(fp, "%d%d", &hash[0], &hash[2]);
+        while(fscanf(fp,"%d%d", &key, &value)!=EOF)
 		{
             // Reading the key and pay load pair for each slot
             k++;
@@ -104,66 +101,55 @@ int main(int argc, char *argv[])
     
 }
 
-int probe(float probing, float splash_table[][8],float hash[], int rows)
+// A function to take input the probe key, Splash table, hash functions and the size of the table as the input
+// to probe the splash table using SIMD instructions and get the corresponding payload of the key.
+
+
+
+int probe(int probing, int splash_table[][8],int hash[], int rows)
 {
-    float a,b,res,shifting;
-    float table_size[4];
+    int a,b,res,shifting;
+    int table_size[4];
     int hash1,hash2,load1,load2;
-    float mult[4];
+    int mult[4];
     int slot1,slot2;
-    __m128 key,hashing,slot,Z,try,table,hash_val,Cmp1,Cmp2,Bucket2_key,Bucket2_val,Bucket1_val,And1,And2,Bucket1_key,Or,S1,S2;
-    shifting = 2 *(32 - log2(rows));
-    table_size[0]=table_size[2]= shifting;
+    __m128i key,slot,Z,Cmp1,Cmp2,Bucket2_key,Bucket2_val,Bucket1_val,And1,And2,Bucket1_key,Or,or_Across,hashing;
+    shifting = (32 - (int)log2(rows));
+    
     // Loading the key and making its 3 copy
+    key=_mm_set1_epi32(probing);
     
-    
-    key=_mm_load_ps1(&probing);
     // Loading the hash multipliers
-    hashing=_mm_load_ps(&hash[0]);
-    //Multiplying the each copy with the hash multiplier
-    Z = _mm_mul_ps(key,hashing);
-    // Extracting the first and third element to take mod with pow(2,32)
-    a = _mm_extract_ps(Z,0);
-    b= _mm_extract_ps(Z,2);
-    long int power = pow(2,32);
-    load1 = (int) (a) % power;
-    load2 = (int)(b) % power;
-    load1 = load1 & (power-1);
-    load2 = load2 & (power-1);
-    mult[0] = (float) load1;
-    mult[2] = (float)load2;
-    // Loading the new hash value and right shifting it by (32 - log2(size of table)
-    hash_val = _mm_load_ps(&mult[0]);
-    table= _mm_load_ps(&table_size[0]);
+    hashing=_mm_setr_epi32(hash[0],hash[1],hash[2],hash[3]);
     
-    slot=_mm_div_ps(hash_val , table);
+    //Multiplying the each copy with the hash multiplier to store the lower bits which is equivalent to mod with pow(2,32)
+    Z = _mm_mullo_epi32(key,hashing);
+    
+    // Right Shifting the multiplied value with 32- log2(rows) so as to get the slots.
+    slot=_mm_srli_epi32(Z , shifting);
+    
     // Extracting the two slots received and retrieving corresponding keys and payloads
-    hash1=(int)(vectorGetByIndex(slot,0))%rows;
-    hash2=(int)(vectorGetByIndex(slot,2))%rows;
-    Bucket1_key = _mm_load_ps(&splash_table[hash1][0]);
-    Bucket1_val = _mm_load_ps(&splash_table[hash1][4]);
-    Bucket2_key = _mm_load_ps(&splash_table[hash2][0]);
-    Bucket2_val = _mm_load_ps(&splash_table[hash2][4]);
+    hash1=(int)(_mm_extract_epi32(slot,0))%rows;
+    hash2=(int)(_mm_extract_epi32(slot,2))%rows;
+    Bucket1_key = _mm_setr_epi32(splash_table[hash1][0],splash_table[hash1][1], splash_table[hash1][2], splash_table[hash1][4]);
+    Bucket1_val = _mm_setr_epi32(splash_table[hash1][4],splash_table[hash1][5],splash_table[hash1][6],splash_table[hash1][7]);
+    Bucket2_key = _mm_setr_epi32(splash_table[hash2][0],splash_table[hash2][1],splash_table[hash2][2],splash_table[hash2][3]);
+    Bucket2_val = _mm_setr_epi32(splash_table[hash2][4],splash_table[hash2][5],splash_table[hash2][6],splash_table[hash2][7]);
+    
     // Comparing it with the keys of those buckets and then taking And with the payloads
-    Cmp1 = _mm_cmpeq_ps(Bucket1_key,key);
-    And1 = _mm_and_ps(Cmp1, Bucket1_val);
-    Cmp2 = _mm_cmpeq_ps(Bucket2_key,key);
-    And2 = _mm_and_ps(Cmp2, Bucket2_val);
+    Cmp1 = _mm_cmpeq_epi32(Bucket1_key,key);
+    And1 = _mm_and_si128(Cmp1, Bucket1_val);
+    Cmp2 = _mm_cmpeq_epi32(Bucket2_key,key);
+    And2 = _mm_and_si128(Cmp2, Bucket2_val);
+    
     // Taking or of both the buckets value of And
-    Or = _mm_or_ps(And1, And2);
-    // Taking or-across the 4 32 bit values to find the payload
-    a = vectorGetByIndex(Or,0);
-    S1 = _mm_load_ps1(&a);
-    a = vectorGetByIndex(Or,1);
-    S2 = _mm_load_ps1(&a);
-    S1 = _mm_or_ps(S1, S2);
-    a = vectorGetByIndex(Or,2);
-    S2 = _mm_load_ps1(&a);
-    S1 = _mm_or_ps(S1, S2);
-    a = vectorGetByIndex(Or,3);
-    S2 = _mm_load_ps1(&a);
-    S1 = _mm_or_ps(S1,S2);
-    a = vectorGetByIndex(S1,0);
+    Or = _mm_or_si128(And1, And2);
+    
+    //Doing Or-Across the _m128i vector
+    or_Across = _mm_hadd_epi32(Or,Or);
+    or_Across = _mm_hadd_epi32(or_Across,or_Across);
+    a = _mm_extract_epi32(or_Across,0);
+    
     // Returning the payload
     return (int)a;
 
