@@ -27,7 +27,7 @@ int main(int argc, char *argv[])
     int rows;
     int pay_load;
     int probing[1000];
-    int key_pay[800][8];
+    
     int key, value,probes;
     int i =0, j=0,k=0,count=0;
     int hash[4];
@@ -54,6 +54,7 @@ int main(int argc, char *argv[])
         }
     }
     
+    
     if(fp)
     {
         // Reading the B, S, h and N
@@ -62,6 +63,7 @@ int main(int argc, char *argv[])
         rows = (pow(2,s))/b;
         // Reading the hash functions
         fscanf(fp, "%d%d", &hash[0], &hash[2]);
+        int key_pay[rows][8];
         while(fscanf(fp,"%d%d", &key, &value)!=EOF)
 		{
             // Reading the key and pay load pair for each slot
@@ -75,27 +77,33 @@ int main(int argc, char *argv[])
             key_pay[i][j+4]=value;
             j++;
 		}
+        
+        
+        fp2=fopen("result.txt","w");
+        fclose(fp2);
+        for(i=0;i<count;i++)
+        {
+            
+            // Calling the probe function for each probe key
+            pay_load = probe(probing[i], key_pay,hash, rows);
+            if(pay_load!=0)
+            {
+                
+                // If the probe key is matched to the splash table, its stored along with its payload to the result file
+                printf("%d %d \n" , (int)probing[i], pay_load);
+                
+                
+            }
+        }
+        fclose(fp);
+        fclose(fp1);
+        
+        
+        
     }
     
     
-    fp2=fopen("result.txt","w");
-    fclose(fp2);
-    for(i=0;i<count;i++)
-	{
-        
-    // Calling the probe function for each probe key
-    pay_load = probe(probing[i], key_pay,hash, rows);
-    if(pay_load!=0)
-    {
-        
-        // If the probe key is matched to the splash table, its stored along with its payload to the result file
-        printf("%d %d \n" , (int)probing[i], pay_load);
-  
-        
-    }
-	}
-    fclose(fp);
-    fclose(fp1);
+    
     return 1;
     
     
