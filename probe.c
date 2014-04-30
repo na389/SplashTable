@@ -129,8 +129,8 @@ int probe(int probing, int splash_table[][8],int hash[], int rows)
     slot=_mm_srli_epi32(Z , shifting);
     
     // Extracting the two slots received and retrieving corresponding keys and payloads
-    hash1=(int)(_mm_extract_epi32(slot,0))%rows;
-    hash2=(int)(_mm_extract_epi32(slot,2))%rows;
+    hash1=(int)(_mm_extract_epi32(slot,0));
+    hash2=(int)(_mm_extract_epi32(slot,2));
     Bucket1_key = _mm_setr_epi32(splash_table[hash1][0],splash_table[hash1][1], splash_table[hash1][2], splash_table[hash1][4]);
     Bucket1_val = _mm_setr_epi32(splash_table[hash1][4],splash_table[hash1][5],splash_table[hash1][6],splash_table[hash1][7]);
     Bucket2_key = _mm_setr_epi32(splash_table[hash2][0],splash_table[hash2][1],splash_table[hash2][2],splash_table[hash2][3]);
