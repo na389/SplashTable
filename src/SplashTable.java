@@ -1,8 +1,10 @@
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.InputMismatchException;
 import java.util.Iterator;
@@ -16,14 +18,14 @@ import java.util.Scanner;
  *
  * Splash Table is bucketized version of d-ary cuckoo hashing.
  * This hash table mainly improves the probing over cuckoo hashing
- * by removing control dependency from the probing routing and relying 
- * on data dependency thus reducing the number of cycles required to 
- * perform the probing of the hash-table. A splash table inserts an 
- * item using multiple hash functions. A key can be inserted into a 
- * bucket corresponding to any one of the functions. Probes need to 
- * consult all hash buckets for the key. The cool thing about splash 
- * tables is that if there is no room in any bucket for a new key, one 
- * can evict some other key to make room. This other key can be re-inserted 
+ * by removing control dependency from the probing routing and relying
+ * on data dependency thus reducing the number of cycles required to
+ * perform the probing of the hash-table. A splash table inserts an
+ * item using multiple hash functions. A key can be inserted into a
+ * bucket corresponding to any one of the functions. Probes need to
+ * consult all hash buckets for the key. The cool thing about splash
+ * tables is that if there is no room in any bucket for a new key, one
+ * can evict some other key to make room. This other key can be re-inserted
  * elsewhere, depending on the values of its other hash functions.
  * Main functions:
  * {@link build(int, KeyValue)},
@@ -31,7 +33,7 @@ import java.util.Scanner;
  * {@link probe(int)}
  * @class HashFunction: Used to represent hash functions to be used depending
  * upon the number of hash functions specified by the user
- * @class DataArray: Data structure for the splash table and its corresponding operations 
+ * @class DataArray: Data structure for the splash table and its corresponding operations
  *
  */
 public class SplashTable {
@@ -60,11 +62,11 @@ public class SplashTable {
 	private final int numReinsertions;
 
 	//Total number of successful insertions done
-	private int numInsertions;	
-	
+	private int numInsertions;
+
 	//Dump file name
-	private String dumpFileName; 
-	
+	private String dumpFileName;
+
 	public SplashTable(int numElementsLog, int numElemBucket,
 			int numHashFunctions, int numReinsertions) {
 		this.numElementsLog = numElementsLog;
@@ -83,14 +85,14 @@ public class SplashTable {
 	 * Function to calculate and store the hash functions depending upon number
 	 * of hash functions to be used
 	 */
-	private void createHashFunctions() {		
+	private void createHashFunctions() {
 		for (int i = 0; i < this.numHashFunctions; i++) {
 			hashFunctions[i] = new SplashTable.HashFunction(getRandom(),
 					numBuckets);
 		}
 	}
-	
-	
+
+
 	//Generating random odd multiplier
 	public int getRandom(){
 		Random rn = new Random();
@@ -106,16 +108,16 @@ public class SplashTable {
 		assert((randomNum & 1) == 1);
 		return randomNum;
 	}
-	
+
 	/**
 	 *
 	 * @param data
 	 *            Function to insert given KeyValue pair in the table and
 	 *            reinsert if not inserted in first attempt till number of
 	 *            allowed reinsertions have been reached
-	 */	
+	 */
     private void build(int tries, KeyValue data) {
-        int[] hashFunctionUsed = new int[this.numHashFunctions];        
+        int[] hashFunctionUsed = new int[this.numHashFunctions];
         int i = 0;
         boolean opStatus = false;
         for (; i < this.numHashFunctions; i++) {
@@ -127,57 +129,55 @@ public class SplashTable {
             final int hash = (int)hashFunctions[i].hash(data.getKey());
             opStatus = this.dataArray.insertElement(hash, data);
             hashFunctionUsed[i] = (int)hash;
-            if (opStatus) {                               
+            if (opStatus) {
                 break;
-            } else {                               
+            } else {
                 continue;
             }
         }
-        
+
         if(!opStatus && i == this.numHashFunctions ){
         	if(this.numHashFunctions == 2)
         		reInsert(++tries, data, 0);
         	else
         		reInsert(++tries, data, i-1);
         }else{
-            numInsertions++; 
+            numInsertions++;
         }
     }
-    
+
     /**
-     * 
+     *
      * @param tries
      * @param data
      * @param i
      */
-    private void reInsert(int tries, KeyValue data,int i){      
-    	System.out.println("tries :"+tries);
-    	final int hash = (int)hashFunctions[i].hash(data.getKey()); 
-    	// If number of tries exceeds number of time re-insertion value entered by the user don't try anymore           
-    	if (tries > numReinsertions) {
-    		System.out.println("Re-insertions exceeded");
+    private void reInsert(int tries, KeyValue data,int i){    	
+    	final int hash = (int)hashFunctions[i].hash(data.getKey());
+    	// If number of tries exceeds number of time re-insertion value entered by the user don't try anymore
+    	if (tries > numReinsertions) {    		
     		dump(dumpFileName);
-    		System.exit(0);    		
+    		System.exit(0);
     		return;
-    	} else {                
-    		KeyValue elementToReinsert = this.dataArray.tryReInsert( hash, data);  
+    	} else {
+    		KeyValue elementToReinsert = this.dataArray.tryReInsert( hash, data);
     		if(elementToReinsert != null)
-    			build(tries, elementToReinsert);                               
-    		return;                
+    			build(tries, elementToReinsert);
+    		return;
     	}
     }
-	
-	
+
+
 	/**
 	 *
 	 * @param key
 	 * @return Value of a given key
 	 */
-	private int probe(int key) {		
+	private int probe(int key) {
 		int result = 0;
 		for (int i = 0; i < this.numHashFunctions && result == 0; i++) {
-			int index = (int)hashFunctions[i].hash(key);			
-			result = this.dataArray.findKey(index, key);			
+			int index = (int)hashFunctions[i].hash(key);
+			result = this.dataArray.findKey(index, key);
 		}
 		return result;
 	}
@@ -194,7 +194,7 @@ public class SplashTable {
 			String arg1 = args[0]; // Number of elements in a single bucket
 			String arg2 = args[1]; // Number of re-insertions allowed
 			String arg3 = args[2]; // Logarithm of total number of elements
-			String arg4 = args[3]; // Number of hash functions to be used			
+			String arg4 = args[3]; // Number of hash functions to be used
 
 			try{
 				numElementsLog = Integer.parseInt(arg3);// Logarithm of total number of entries in hashTable i. e. size of the hashTable. S
@@ -215,9 +215,11 @@ public class SplashTable {
 		}
 
 		String inputFileName = args[4]; // Name of the input file containing key value pairs. filename
-		String dumpFileName = args[5]; //Name of the dumpfile
-		String probefile = args[6]; //Name of probefile
-		String resultfile = args[7]; // Name for resultfile
+		String dumpFileName = args[5]; //Name of the dumpfile		
+
+		BufferedReader br;
+		br = new BufferedReader(new InputStreamReader(System.in));
+
 		SplashTable splashTable = new SplashTable(numElementsLog,
 				numElementsBucket, numHashFunctions,numReinsertions );
 		splashTable.dumpFileName = dumpFileName;
@@ -230,17 +232,17 @@ public class SplashTable {
 		}
 		int key;
 		int value;
-		
+
 		try{
 			while (inFile.hasNext()) {
 				key = inFile.nextInt();
 				value = inFile.nextInt();
 				splashTable.build(0, new KeyValue(key, value));
-			}	
+			}
 		}catch(NumberFormatException e1){
-			
+
 		}catch (NullPointerException e2 ) {
-			
+
 		}catch (InputMismatchException e3 ) {
 			if(e3 instanceof InputMismatchException){
 				System.out.println("Number entered is out of range");
@@ -251,10 +253,17 @@ public class SplashTable {
 		splashTable.dump(dumpFileName);
 		inFile.close();
 
-		
+
 		List<String> probeKeys = new ArrayList<String>();
 		 try {
-				probeKeys = splashTable.readTextFile(probefile);
+				//probeKeys = splashTable.readTextFile(probefile);
+				//probeKeys.add(Integer.parseInt(line.trim()));
+				String line;
+				while ((line = br.readLine()) != null) {
+					probeKeys.add(line);
+
+				}
+
 			}catch(NumberFormatException e1){
 				System.out.println("Error Reading Probe File");
 				e1.printStackTrace();
@@ -268,29 +277,20 @@ public class SplashTable {
 		List<String> resultFileData = new ArrayList<String>();
 		int valueOutput = 0;
 		for(String keyInput: probeKeys){
-			valueOutput = splashTable.probe(Integer.parseInt(keyInput.trim()));			
+			valueOutput = splashTable.probe(Integer.parseInt(keyInput.trim()));
 			switch (valueOutput){
 				case 0:{
-					System.out.println("Result not found for:"+keyInput);
-					resultFileData.add(keyInput+ " 0");
+					System.out.println(keyInput+" 0");
 					break;
 				}
 				default: {
-					System.out.println("Result:"+valueOutput);
-					resultFileData.add(keyInput+ " "+valueOutput);
+					System.out.println(keyInput+" "+valueOutput);
 					break;
 				}
 			}
-		}
-		try {
-			splashTable.writeTextFile(resultFileData, resultfile);
-		} catch (IOException e) {
-			System.out.println("Error Writing Result File");
-			e.printStackTrace();
-		}
-		
+		}	
 	}
-	
+
 	/**
 	 * Creating Dump File
 	 * B S h N
@@ -301,7 +301,7 @@ public class SplashTable {
      * K[2^S-1] P[2^S-1]
 	 * @param dumpFileName
 	 */
-	
+
 	private void dump(String dumpFileName){
 		ArrayList<String> outputDump = new ArrayList<String>();
 		outputDump.add(""+numElemBucket+  " "+numElementsLog+ " "+numHashFunctions+ " "+numInsertions );
@@ -312,22 +312,21 @@ public class SplashTable {
 		outputDump.add(str.toString());
         List<Queue<KeyValue>> list = dataArray.hashTable;
         for (Iterator<Queue<KeyValue>> iterator = list.iterator(); iterator.hasNext();) {
-			Queue<KeyValue> queue = (Queue<KeyValue>) iterator.next();			
+			Queue<KeyValue> queue = (Queue<KeyValue>) iterator.next();
 			int i = 0;
 			for (Iterator<KeyValue> iterator2 = queue.iterator(); iterator2.hasNext()||i < numElemBucket;) {
 				KeyValue keyValue = null;
 				if(iterator2.hasNext())
 					keyValue = (KeyValue) iterator2.next();
 				if(keyValue != null){
-					outputDump.add(keyValue.getKey()+" "+keyValue.getValue());
-					System.out.println("key values are : "+keyValue.getKey()+ " : "+keyValue.getValue());
+					outputDump.add(keyValue.getKey()+" "+keyValue.getValue());					
 				}
 				else
 					outputDump.add(0+" "+0);
 				i++;
 			}
 		}
-                
+
         try {
 			writeTextFile(outputDump, dumpFileName);
 		} catch (IOException e) {
@@ -339,39 +338,34 @@ public class SplashTable {
 	}
 
 	private void writeTextFile(List<String> outputDump, String aFileName) throws IOException {
-	   // Path path = Paths.get(aFileName);
-	    //Files.write(path, outputDump, ENCODING);
-	    
-	    FileWriter writer = new FileWriter(aFileName); 
-	    for(String str: outputDump) {	    	
+	    FileWriter writer = new FileWriter(aFileName);
+	    for(String str: outputDump) {
 	      writer.write(str+"\n");
 	    }
 	    writer.close();
 	  }
-	
+
 	private List<String> readTextFile(String aFileName) throws IOException {
-		//Path path = Paths.get(aFileName);
-		///return Files.readAllLines(path, ENCODING);		
 		Scanner s = new Scanner(new File(aFileName));
 		ArrayList<String> list = new ArrayList<String>();
 		while (s.hasNext()){
-		    list.add(s.next());		    
+		    list.add(s.next());
 		}
 		s.close();
 		return list;
 	}
-	
-	
+
+
 	/**
 	 *
-	 * @author neha 
+	 * @author neha
 	 * Class that creates hash function depending upon the given
 	 * table size and multiplier
 	 */
 	private static final class HashFunction {
 		// Multiplier to calculate hash
 		private final int multiplier;
-		
+
 		//Number of buckets in the table
 		private final long sizeTable;
 
@@ -380,9 +374,9 @@ public class SplashTable {
 			this.sizeTable = sizeTable;
 		}
 
-		//Method to calculate hash depending upon different multipliers 
+		//Method to calculate hash depending upon different multipliers
 		public int hash(int key) {
-			long s = (long) ((multiplier * key) % (Math.pow(2, 32)));		
+			long s = (long) ((multiplier * key) % (Math.pow(2, 32)));
 			s =  (s & (long)(Math.pow(2, 32)-1));//Taking LSBs of the 64 bit number
 			int log = 0;
 			if(sizeTable > Integer.MAX_VALUE){
@@ -392,10 +386,10 @@ public class SplashTable {
 			}
 			//Number of bits required in the result
 			//32 is chosen because word size for integer is maximum 32
-			int w_r = 32 - log;			
+			int w_r = 32 - log;
 			return (int) (s >>> w_r) ;//Getting required bits of the integer to hash into the buckets
 		}
-		
+
 		//Method to find log of the size to determine number of bits to be used in the result
 		public static int log2(int v){
 			if(v <= 0 || v == 1 ){
@@ -410,12 +404,12 @@ public class SplashTable {
 				if ((v & b[i]) != 0){
 					v >>= S[i];
 					r |= S[i];
-				} 
+				}
 			}
 			return r;
 		}
-		
-		
+
+
 		@Override
 		public String toString() {
 			return multiplier+" ";
@@ -424,20 +418,20 @@ public class SplashTable {
 
 	/**
 	 *
-	 * @author neha 
+	 * @author neha
 	 * Data structure to be used for Hash Table
 	 */
 	private static final class DataArray {
 		private List<Queue<KeyValue>> hashTable;
-		private int numElemBucket;		
+		private int numElemBucket;
 		public DataArray(int numBuckets, int numElemBucket) {
-			hashTable = new ArrayList<Queue<KeyValue>>(numBuckets);			
+			hashTable = new ArrayList<Queue<KeyValue>>(numBuckets);
 			for (int i = 0; i < numBuckets; i++) {
 				hashTable.add(i, new LinkedList<KeyValue>());
-			}			
+			}
 			this.numElemBucket = numElemBucket;
 		}
-	
+
 		/**
 		 *
 		 * @param index
@@ -447,7 +441,7 @@ public class SplashTable {
 		 */
 		public boolean insertElement(int index, KeyValue data) {
 			boolean inserted = (hashTable.get(index).size() < this.numElemBucket) ? hashTable
-					.get(index).add(data) : false;			
+					.get(index).add(data) : false;
 			return inserted;
 		}
 
@@ -462,7 +456,7 @@ public class SplashTable {
 
 		public KeyValue tryReInsert(int index, KeyValue data) {
 			// Its known that the corresponding bucket is full so move the data
-			// around			
+			// around
 			KeyValue elementInsertedFirst = hashTable.get(index).poll();
 			hashTable.get(index).add(data);
 			return elementInsertedFirst;
@@ -474,16 +468,16 @@ public class SplashTable {
 		 * @param key
 		 * @return Find a given key in the HashTable
 		 */
-		public int findKey(int index, int key) {			
+		public int findKey(int index, int key) {
 			int value = 0;
-			
-			Iterator<KeyValue> iterator2 = hashTable.get(index).iterator();			
-			KeyValue keyValue = (iterator2.hasNext())? iterator2.next(): null;			
-			
+
+			Iterator<KeyValue> iterator2 = hashTable.get(index).iterator();
+			KeyValue keyValue = (iterator2.hasNext())? iterator2.next(): null;
+
 			for (;  keyValue!=null && keyValue.getKey()!=key && iterator2.hasNext();) {
 				 keyValue = iterator2.next();
 			}
-			
+
 			value =(keyValue!=null && keyValue.getKey() == key)? keyValue.getValue(): 0;
 			return value;
 		}
