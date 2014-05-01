@@ -1,8 +1,10 @@
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.InputMismatchException;
 import java.util.Iterator;
@@ -217,6 +219,10 @@ public class SplashTable {
 		String inputFileName = args[4]; // Name of the input file containing key value pairs. filename
 		String dumpFileName = args[5]; //Name of the dumpfile
 		String probefile = args[6]; //Name of probefile
+		
+		BufferedReader br;
+		br = new BufferedReader(new InputStreamReader(System.in));
+		
 		String resultfile = args[7]; // Name for resultfile
 		SplashTable splashTable = new SplashTable(numElementsLog,
 				numElementsBucket, numHashFunctions,numReinsertions );
