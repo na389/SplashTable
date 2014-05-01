@@ -54,7 +54,6 @@ int main(int argc, char *argv[])
         }
     }
     
-    
     if(fp)
     {
         // Reading the B, S, h and N
@@ -62,8 +61,9 @@ int main(int argc, char *argv[])
         // Getting the no. of buckets
         rows = (pow(2,s))/b;
         // Reading the hash functions
+
+	   int key_pay[rows][8];	
         fscanf(fp, "%d%d", &hash[0], &hash[2]);
-        int key_pay[rows][8];
         while(fscanf(fp,"%d%d", &key, &value)!=EOF)
 		{
             // Reading the key and pay load pair for each slot
@@ -77,33 +77,27 @@ int main(int argc, char *argv[])
             key_pay[i][j+4]=value;
             j++;
 		}
-        
-        
-        fp2=fopen("result.txt","w");
-        fclose(fp2);
-        for(i=0;i<count;i++)
-        {
-            
-            // Calling the probe function for each probe key
-            pay_load = probe(probing[i], key_pay,hash, rows);
-            if(pay_load!=0)
-            {
-                
-                // If the probe key is matched to the splash table, its stored along with its payload to the result file
-                printf("%d %d \n" , (int)probing[i], pay_load);
-                
-                
-            }
-        }
-        fclose(fp);
-        fclose(fp1);
-        
-        
-        
     }
     
     
-    
+    fp2=fopen("result.txt","w");
+    fclose(fp2);
+    for(i=0;i<count;i++)
+	{
+        
+    // Calling the probe function for each probe key
+    pay_load = probe(probing[i], key_pay,hash, rows);
+    if(pay_load!=0)
+    {
+        
+        // If the probe key is matched to the splash table, its stored along with its payload to the result file
+        printf("%d %d \n" , (int)probing[i], pay_load);
+  
+        
+    }
+	}
+    fclose(fp);
+    fclose(fp1);
     return 1;
     
     
@@ -139,7 +133,7 @@ int probe(int probing, int splash_table[][8],int hash[], int rows)
     // Extracting the two slots received and retrieving corresponding keys and payloads
     hash1=(int)(_mm_extract_epi32(slot,0));
     hash2=(int)(_mm_extract_epi32(slot,2));
-    Bucket1_key = _mm_setr_epi32(splash_table[hash1][0],splash_table[hash1][1], splash_table[hash1][2], splash_table[hash1][4]);
+    Bucket1_key = _mm_setr_epi32(splash_table[hash1][0],splash_table[hash1][1], splash_table[hash1][2], splash_table[hash1][3]);
     Bucket1_val = _mm_setr_epi32(splash_table[hash1][4],splash_table[hash1][5],splash_table[hash1][6],splash_table[hash1][7]);
     Bucket2_key = _mm_setr_epi32(splash_table[hash2][0],splash_table[hash2][1],splash_table[hash2][2],splash_table[hash2][3]);
     Bucket2_val = _mm_setr_epi32(splash_table[hash2][4],splash_table[hash2][5],splash_table[hash2][6],splash_table[hash2][7]);
